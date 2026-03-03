@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI替代倒计时 - 你还能扛多久？</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899;
+            --accent: #06b6d4;
+            --dark: #0f172a;
+            --darker: #020617;
+            --light: #f8fafc;
+            --gray: #64748b;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--darker);
+            min-height: 100vh;
+            color: var(--light);
+            overflow-x: hidden;
+        }
+
+        /* 背景动画 */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(236, 72, 153, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
+            animation: bgMove 20s ease-in-out infinite;
+        }
+
+        @keyframes bgMove {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(2%, 2%) rotate(120deg); }
+            66% { transform: translate(-2%, 1%) rotate(240deg); }
+        }
+
+        /* 网格背景 */
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* 页面通用样式 */
+        .page {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 首页样式 */
+        .hero {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .logo {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 30px;
+            position: relative;
+        }
+
+        .logo-inner {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            animation: logoPulse 2s ease-in-out infinite;
+            box-shadow: 0 20px 60px rgba(99, 102, 241, 0.4);
+        }
+
+        @keyframes logoPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 900;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, var(--light) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero .subtitle {
+            font-size: 1.2rem;
+            color: var(--gray);
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .highlight {
+            color: var(--secondary);
+            font-weight: 600;
+        }
+
+        /* 按钮样式 */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 16px 40px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(99, 102, 241, 0.5);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--light);
+            border: 2px solid var(--gray);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* 问题页面样式 */
+        .quiz-container {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 40px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .question-number {
+            color: var(--accent);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .question-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            line-height: 1.4;
+        }
+
+        /* 选项卡片 */
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid transparent;
+            border-radius: 16px;
+            padding: 20px 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .option-card:hover {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: rgba(99, 102, 241, 0.3);
+            transform: translateX(5px);
+        }
+
+        .option-card.selected {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: var(--primary);
+        }
+
+        .option-icon {
+            width: 44px;
+            height: 44px;
+            background: rgba(99, 102, 241, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+
+        .option-card.selected .option-icon {
+            background: var(--primary);
+        }
+
+        .option-text {
+            flex: 1;
+        }
+
+        .option-label {
+            font-weight: 600;
+            font-size: 1.05rem;
+            margin-bottom: 3px;
+        }
+
+        .option-desc {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        /* 滑块样式 */
+        .slider-container {
+            margin: 30px 0;
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.5);
+            transition: transform 0.2s;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        .slider-value {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        /* 结果页面样式 */
+        .result-container {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .result-icon {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 30px;
+            position: relative;
+        }
+
+        .result-icon-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-icon-inner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: conic-gradient(var(--primary), var(--secondary), var(--accent), var(--primary));
+            animation: rotate 10s linear infinite;
+        }
+
+        .result-icon-inner::after {
+            content: attr(data-emoji);
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            background: var(--darker);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .countdown-box {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(236, 72, 153, 0.2));
+            border-radius: 24px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .countdown-label {
+            font-size: 1rem;
+            color: var(--gray);
+            margin-bottom: 10px;
+        }
+
+        .countdown-time {
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--light), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        .result-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--secondary);
+        }
+
+        .result-desc {
+            font-size: 1.1rem;
+            color: var(--gray);
+            line-height: 1.7;
+            margin-bottom: 30px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .result-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .result-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .result-card-label {
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-bottom: 5px;
+        }
+
+        .result-card-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--light);
+        }
+
+        .share-hint {
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin: 25px 0;
+            font-size: 0.95rem;
+            color: var(--accent);
+        }
+
+        .disclaimer {
+            font-size: 0.8rem;
+            color: var(--gray);
+            margin-top: 30px;
+            opacity: 0.7;
+        }
+
+        /* 响应式 */
+        @media (max-width: 600px) {
+            .quiz-container {
+                padding: 25px;
+                border-radius: 20px;
+            }
+
+            .option-card {
+                padding: 15px 18px;
+            }
+
+            .option-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 1.1rem;
+            }
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 30px;
+            position: relative;
+        }
+
+        .loading-spinner::before,
+        .loading-spinner::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            border: 3px solid transparent;
+        }
+
+        .loading-spinner::before {
+            width: 100%;
+            height: 100%;
+            border-top-color: var(--primary);
+            border-right-color: var(--secondary);
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-spinner::after {
+            width: 60%;
+            height: 60%;
+            top: 20%;
+            left: 20%;
+            border-bottom-color: var(--accent);
+            border-left-color: var(--primary);
+            animation: spin 0.8s linear infinite reverse;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1.1rem;
+            color: var(--gray);
+        }
+
+        .loading-text::after {
+            content: '';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="grid-overlay"></div>
+
+    <div class="container">
+        <!-- 首页 -->
+        <div class="page active" id="page-home">
+            <div class="hero">
+                <div class="logo">
+                    <div class="logo-inner">🤖</div>
+                </div>
+                <h1>AI替代倒计时</h1>
+                <p class="subtitle">
+                    想知道你的工作还能做多久？<br>
+                    <span class="highlight">5分钟</span>测试，预测你被AI取代的时间！
+                </p>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="startQuiz()">
+                        <span>开始测试</span>
+                        <span>→</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 问题页面 -->
+        <div class="page" id="page-quiz">
+            <div class="quiz-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                </div>
+                
+                <div class="question-number">问题 <span id="q-current">1</span> / <span id="q-total">5</span></div>
+                <h2 class="question-title" id="question-text">加载中...</h2>
+                
+                <div class="options" id="options-container">
+                    <!-- 动态生成选项 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 加载页面 -->
+        <div class="loading" id="page-loading">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">AI正在分析你的职业生涯</p>
+        </div>
+
+        <!-- 结果页面 -->
+        <div class="page" id="page-result">
+            <div class="result-container">
+                <div class="result-icon">
+                    <div class="result-icon-inner" id="result-emoji" data-emoji="🤖"></div>
+                </div>
+                
+                <div class="countdown-box">
+                    <div class="countdown-label">距离你被AI替代还有</div>
+                    <div class="countdown-time" id="countdown-time">计算中...</div>
+                </div>
+
+                <h2 class="result-title" id="result-title">分析结果</h2>
+                <p class="result-desc" id="result-desc">描述</p>
+
+                <div class="result-cards" id="result-cards">
+                    <!-- 动态生成 -->
+                </div>
+
+                <div class="share-hint" id="share-hint">
+                    💡 建议：现在开始学习如何与AI协作，可能比抗拒它更明智！
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="restartQuiz()">
+                        <span>再测一次</span>
+                        <span>↻</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="shareResult()">
+                        <span>分享结果</span>
+                        <span>📤</span>
+                    </button>
+                </div>
+
+                <p class="disclaimer">
+                    * 本测试仅供娱乐，结果基于当前AI发展趋势的推测，不构成职业建议。
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 问题数据
+        const questions = [
+            {
+                id: 'occupation',
+                text: '你的职业领域是？',
+                type: 'select',
+                options: [
+                    { value: 'tech', label: '技术/编程', desc: '程序员、工程师、IT运维等', icon: '💻', score: 30 },
+                    { value: 'creative', label: '创意/设计', desc: '设计师、文案、摄影师等', icon: '🎨', score: 25 },
+                    { value: 'content', label: '内容/媒体', desc: '编辑、记者、自媒体等', icon: '✍️', score: 20 },
+                    { value: 'service', label: '客服/行政', desc: '客服、前台、文员等', icon: '📞', score: 10 },
+                    { value: 'finance', label: '金融/分析', desc: '会计、分析师、审计等', icon: '📊', score: 25 },
+                    { value: 'legal', label: '法律/咨询', desc: '律师、顾问、合规等', icon: '⚖️', score: 35 },
+                    { value: 'medical', label: '医疗/健康', desc: '医生、护士、康复师等', icon: '🏥', score: 45 },
+                    { value: 'education', label: '教育/培训', desc: '教师、培训师、讲师等', icon: '📚', score: 35 },
+                    { value: 'sales', label: '销售/市场', desc: '销售、市场、商务等', icon: '📈', score: 40 },
+                    { value: 'manual', label: '体力/操作', desc: '司机、工人、操作员等', icon: '🔧', score: 50 },
+                    { value: 'research', label: '科研/学术', desc: '研究员、科学家、学者等', icon: '🔬', score: 50 },
+                    { value: 'manage', label: '管理/决策', desc: '经理、高管、创业者等', icon: '👔', score: 55 }
+                ]
+            },
+            {
+                id: 'experience',
+                text: '你在该领域工作多久了？',
+                type: 'select',
+                options: [
+                    { value: '0-1', label: '刚入行 (0-1年)', desc: '新人小白，还在学习中', icon: '🌱', score: -10 },
+                    { value: '1-3', label: '新手期 (1-3年)', desc: '有一定经验，但还不够老练', icon: '🌿', score: 0 },
+                    { value: '3-5', label: '成长期 (3-5年)', desc: '正是能力快速提升的阶段', icon: '🌲', score: 5 },
+                    { value: '5-10', label: '成熟期 (5-10年)', desc: '经验丰富，独当一面', icon: '🏆', score: 10 },
+                    { value: '10+', label: '资深专家 (10年+)', desc: '行业老司机，资历深厚', icon: '👑', score: 5 }
+                ]
+            },
+            {
+                id: 'skill',
+                text: '你的专业技能水平如何？',
+                type: 'slider',
+                min: 1,
+                max: 10,
+                labels: ['菜鸟', '入门', '初级', '中级', '中上', '熟练', '精通', '专家', '大师', '顶尖'],
+                defaultValue: 5
+            },
+            {
+                id: 'ai_knowledge',
+                text: '你对AI的了解程度？',
+                type: 'select',
+                options: [
+                    { value: 'none', label: '几乎不了解', desc: 'AI是啥？能吃吗？', icon: '😴', score: -15 },
+                    { value: 'basic', label: '略有耳闻', desc: '听说过ChatGPT，但没用过', icon: '🤔', score: -5 },
+                    { value: 'user', label: '轻度使用', desc: '偶尔用用，知道基本操作', icon: '👨‍💻', score: 5 },
+                    { value: 'advanced', label: '比较熟悉', desc: '经常使用，了解AI的能力和限制', icon: '🚀', score: 15 },
+                    { value: 'expert', label: '深度掌握', desc: 'AI工具重度用户，甚至懂点技术', icon: '⚡', score: 25 }
+                ]
+            },
+            {
+                id: 'ai_usage',
+                text: '你目前使用AI的频率？',
+                type: 'select',
+                options: [
+                    { value: 'never', label: '从不使用', desc: '完全不用AI工具', icon: '🚫', score: -20 },
+                    { value: 'rarely', label: '偶尔尝试', desc: '一个月用几次', icon: '📅', score: -5 },
+                    { value: 'weekly', label: '每周使用', desc: '一周用几次', icon: '📆', score: 5 },
+                    { value: 'daily', label: '每天使用', desc: '已经成为工作的一部分', icon: '☀️', score: 15 },
+                    { value: 'always', label: '重度依赖', desc: '离开AI就不会工作了', icon: '⚙️', score: 20 }
+                ]
+            }
+        ];
+
+        // 结果数据
+        const results = {
+            imminent: {
+                emoji: '⚠️',
+                title: '危在旦夕！',
+                desc: '你的岗位已经是AI的重点关照对象了。建议立即开始学习新技能，或者...学会如何讨好机器人新老板。',
+                hint: '🚨 紧急建议：今晚就开始学习AI工具，也许还有救！'
+            },
+            soon: {
+                emoji: '😰',
+                title: '风雨欲来',
+                desc: '虽然暂时安全，但风暴正在逼近。你有1-3年的时间来提升自己，别浪费了！',
+                hint: '⏰ 建议：把刷短视频的时间用来学习AI，你的未来会感谢你。'
+            },
+            medium: {
+                emoji: '😐',
+                title: '中等风险',
+                desc: '还有几年缓冲期，但别掉以轻心。利用这段时间把自己变成"AI增强型"人才吧。',
+                hint: '💡 建议：开始尝试用AI辅助工作，提高效率，让自己变得不可替代。'
+            },
+            safe: {
+                emoji: '😌',
+                title: '暂时安全',
+                desc: '你的工作相对复杂，AI短期内还难以完全替代。但请记住，只是"暂时"而已。',
+                hint: '🎯 建议：保持学习，关注行业动态，随时准备转型。'
+            },
+            very_safe: {
+                emoji: '🎉',
+                title: '高枕无忧（暂时）',
+                desc: '恭喜！你的工作需要大量的人际互动、创造力或复杂决策。AI想要取代你，还得再进化几代。',
+                hint: '🌟 建议：享受这段安全期，但也要保持警惕，毕竟技术进步的速度超乎想象！'
+            }
+        };
+
+        // 状态
+        let currentQuestion = 0;
+        let answers = {};
+
+        // 开始测试
+        function startQuiz() {
+            document.getElementById('page-home').classList.remove('active');
+            document.getElementById('page-quiz').classList.add('active');
+            showQuestion(0);
+        }
+
+        // 显示问题
+        function showQuestion(index) {
+            currentQuestion = index;
+            const q = questions[index];
+            
+            document.getElementById('q-current').textContent = index + 1;
+            document.getElementById('q-total').textContent = questions.length;
+            document.getElementById('question-text').textContent = q.text;
+            
+            const progress = ((index + 1) / questions.length) * 100;
+            document.getElementById('progress-fill').style.width = progress + '%';
+            
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            
+            if (q.type === 'select') {
+                q.options.forEach((opt, i) => {
+                    const card = document.createElement('div');
+                    card.className = 'option-card';
+                    card.onclick = () => selectOption(q.id, opt.value, opt.score, card);
+                    card.innerHTML = `
+                        <div class="option-icon">${opt.icon}</div>
+                        <div class="option-text">
+                            <div class="option-label">${opt.label}</div>
+                            <div class="option-desc">${opt.desc}</div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            } else if (q.type === 'slider') {
+                const sliderDiv = document.createElement('div');
+                sliderDiv.className = 'slider-container';
+                sliderDiv.innerHTML = `
+                    <div class="slider-labels">
+                        ${q.labels.map(l => `<span>${l}</span>`).join('')}
+                    </div>
+                    <input type="range" class="slider" id="slider-${q.id}" 
+                           min="${q.min}" max="${q.max}" value="${q.defaultValue}">
+                    <div class="slider-value" id="slider-value-${q.id}">${q.labels[q.defaultValue - 1]}</div>
+                `;
+                container.appendChild(sliderDiv);
+                
+                const slider = document.getElementById(`slider-${q.id}`);
+                const valueDisplay = document.getElementById(`slider-value-${q.id}`);
+                
+                slider.oninput = function() {
+                    valueDisplay.textContent = q.labels[this.value - 1];
+                };
+                
+                // 添加确认按钮
+                const confirmBtn = document.createElement('button');
+                confirmBtn.className = 'btn btn-primary';
+                confirmBtn.style.marginTop = '30px';
+                confirmBtn.innerHTML = '<span>确认</span><span>→</span>';
+                confirmBtn.onclick = () => {
+                    const value = parseInt(slider.value);
+                    answers[q.id] = { value: value, score: value * 3 };
+                    nextQuestion();
+                };
+                container.appendChild(confirmBtn);
+            }
+        }
+
+        // 选择选项
+        function selectOption(questionId, value, score, cardElement) {
+            // 移除其他选中状态
+            document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+            cardElement.classList.add('selected');
+            
+            answers[questionId] = { value, score };
+            
+            // 延迟后进入下一题
+            setTimeout(() => {
+                nextQuestion();
+            }, 300);
+        }
+
+        // 下一题
+        function nextQuestion() {
+            if (currentQuestion < questions.length - 1) {
+                showQuestion(currentQuestion + 1);
+            } else {
+                showLoading();
+            }
+        }
+
+        // 显示加载
+        function showLoading() {
+            document.getElementById('page-quiz').classList.remove('active');
+            document.getElementById('page-loading').classList.add('active');
+            
+            // 模拟计算时间
+            setTimeout(() => {
+                showResult();
+            }, 2000);
+        }
+
+        // 计算结果
+        function calculateResult() {
+            let baseMonths = 60; // 默认5年
+            
+            // 职业基础分
+            const occupationScore = answers.occupation?.score || 30;
+            baseMonths = occupationScore;
+            
+            // 工作经验调整
+            const expScore = answers.experience?.score || 0;
+            baseMonths += expScore;
+            
+            // 技能水平调整 (1-10分)
+            const skillScore = answers.skill?.score || 15;
+            baseMonths += skillScore;
+            
+            // AI了解程度
+            const aiKnowledgeScore = answers.ai_knowledge?.score || 0;
+            baseMonths += aiKnowledgeScore;
+            
+            // AI使用频率
+            const aiUsageScore = answers.ai_usage?.score || 0;
+            baseMonths += aiUsageScore;
+            
+            // 转换为月数（基础分*3）
+            let months = baseMonths * 3;
+            
+            // 确保最小值
+            if (months < 1) months = 1;
+            if (months > 360) months = 360; // 最多30年
+            
+            return months;
+        }
+
+        // 格式化时间
+        function formatTime(months) {
+            if (months < 12) {
+                return `${Math.round(months)}个月`;
+            } else if (months < 24) {
+                const m = Math.round(months % 12);
+                return m > 0 ? `1年${m}个月` : '1年';
+            } else {
+                const years = Math.floor(months / 12);
+                const m = Math.round(months % 12);
+                return m > 0 ? `${years}年${m}个月` : `${years}年`;
+            }
+        }
+
+        // 显示结果
+        function showResult() {
+            const months = calculateResult();
+            const timeStr = formatTime(months);
+            
+            let resultType;
+            if (months <= 6) resultType = 'imminent';
+            else if (months <= 24) resultType = 'soon';
+            else if (months <= 60) resultType = 'medium';
+            else if (months <= 120) resultType = 'safe';
+            else resultType = 'very_safe';
+            
+            const result = results[resultType];
+            
+            document.getElementById('page-loading').classList.remove('active');
+            document.getElementById('page-result').classList.add('active');
+            
+            document.getElementById('result-emoji').setAttribute('data-emoji', result.emoji);
+            document.getElementById('countdown-time').textContent = timeStr;
+            document.getElementById('result-title').textContent = result.title;
+            document.getElementById('result-desc').textContent = result.desc;
+            document.getElementById('share-hint').textContent = result.hint;
+            
+            // 生成详情卡片
+            const cardsContainer = document.getElementById('result-cards');
+            cardsContainer.innerHTML = `
+                <div class="result-card">
+                    <div class="result-card-label">职业风险等级</div>
+                    <div class="result-card-value">${getRiskLevel(months)}</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-card-label">建议准备时间</div>
+                    <div class="result-card-value">${Math.max(1, Math.round(months * 0.3))}个月</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-card-label">替代概率</div>
+                    <div class="result-card-value">${Math.min(99, Math.round(100 - months/6))}%</div>
+                </div>
+            `;
+        }
+
+        // 获取风险等级
+        function getRiskLevel(months) {
+            if (months <= 6) return '🔴 极高';
+            if (months <= 24) return '🟠 较高';
+            if (months <= 60) return '🟡 中等';
+            if (months <= 120) return '🟢 较低';
+            return '🔵 很低';
+        }
+
+        // 重新开始
+        function restartQuiz() {
+            currentQuestion = 0;
+            answers = {};
+            document.getElementById('page-result').classList.remove('active');
+            document.getElementById('page-home').classList.add('active');
+        }
+
+        // 分享结果
+        function shareResult() {
+            const time = document.getElementById('countdown-time').textContent;
+            const title = document.getElementById('result-title').textContent;
+            const text = `我在「AI替代倒计时」测试中，距离被AI替代还有${time}！\n\n测试结果：${title}\n\n快来测测你还能扛多久？`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'AI替代倒计时',
+                    text: text
+                });
+            } else {
+                // 复制到剪贴板
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('结果已复制到剪贴板，快去分享给朋友吧！');
+                }).catch(() => {
+                    alert('分享功能暂不可用，请手动截图分享！');
+                });
+            }
+        }
+    </script>
+</body>
+</html>
